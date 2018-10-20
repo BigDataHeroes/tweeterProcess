@@ -42,7 +42,7 @@ object train {
     //Pipeline proccesing preparation
     val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
     val spanishStopWords = StopWordsRemover.loadDefaultStopWords("spanish")
-    val remover = new StopWordsRemover().setInputCol("words").setOutputCol("wordFiltered")
+    val remover = new StopWordsRemover().setStopWords(spanishStopWords).setInputCol("words").setOutputCol("wordFiltered")
     val bigram = new NGram().setN(2).setInputCol("wordFiltered").setOutputCol("bigrams")
     val trigram = new NGram().setN(3).setInputCol("wordFiltered").setOutputCol("trigrams")
     

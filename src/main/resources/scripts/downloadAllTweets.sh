@@ -3,7 +3,7 @@
 # Before run the script you must register
 # twurl authorize --consumer-key xxxxxxx --consumer-secret yyyyyyyyyyyy
 
-now=$(date +"%m_%d_%Y")
+now=$(date +"%d_%m_%Y")
 filename=tweets.$now
 base_dir=output
 files=( "centro" "Arganzuela" "Retiro" "Salamanca" "Chamartin" "Tetuan" "Chamberi" "Fuencarral" "Moncloa" "Latina" "Carabanchel" "Usera" "PuenteVallecas" "Moratalaz" "CiudadLineal" "Hortaleza" "Villaverde" "VillaVallecas" "Vicalvaro" "Canillejas" "Barajas" ) 
