@@ -12,24 +12,33 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import org.apache.commons.io.FileUtils
 import org.apache.spark.SparkContext
+import org.apache.hadoop.fs.{FileSystem,Path}
+import org.apache.hadoop.conf.Configuration
+import scala.collection.mutable.ListBuffer
 
 
 
 object predict {
   
-  val outputBayesModel="/home/pablo/EntornosTrabajo/KeepCodingFinalProject/model2"
-  val outputCountvectorizedModel="/home/pablo/EntornosTrabajo/KeepCodingFinalProject/countVectModel/model2"
-  
-  val originPath = "/home/pablo/EntornosTrabajo/KeepCodingFinalProject/batchDownloadTweets/output"
-  val outputPath = "/home/pablo/EntornosTrabajo/KeepCodingFinalProject/batchDownloadTweets/outputSparkProcess"
-  val outputProcessFiles = "/home/pablo/EntornosTrabajo/KeepCodingFinalProject/batchDownloadTweets/processOk"
+//  val outputBayesModel="/home/pablo/EntornosTrabajo/KeepCodingFinalProject/model2"
+//  val outputCountvectorizedModel="/home/pablo/EntornosTrabajo/KeepCodingFinalProject/countVectModel/model2"
+//  
+//  val originPath = "/home/pablo/EntornosTrabajo/KeepCodingFinalProject/batchDownloadTweets/output"
+//  val outputPath = "/home/pablo/EntornosTrabajo/KeepCodingFinalProject/batchDownloadTweets/outputSparkProcess"
+//  val outputProcessFiles = "/home/pablo/EntornosTrabajo/KeepCodingFinalProject/batchDownloadTweets/processOk"
   
   def main(args: Array[String]) {
     
+    val outputBayesModel= args(0)
+    val outputCountvectorizedModel=args(1)
+    val originPath = args(2)
+    val outputPath = args(3)
+    val outputProcessFiles = args(4)
+    
+    PrintUtiltity.print(s"Variables de entrada: ${outputBayesModel}, ${outputCountvectorizedModel}, ${originPath}, ${outputPath}, ${outputProcessFiles} ")
     
      val mySpark = SparkSession
                   .builder()
-                  .master("local[2]")
                   .appName("TweetProcess")
                   .getOrCreate()
     
@@ -38,7 +47,7 @@ object predict {
       val sc = mySpark.sparkContext
      
     val dirs = getListOfDirs(originPath)
-    
+     PrintUtiltity.print(s"Lista de directorios: ${dirs}")
     //Load all files in spark
     val rddAllFiles = dirs.map(dir => {
           sc.textFile(dir).toDF("text").withColumn("fecha", lit(dateFromFileName(dir)))
@@ -68,10 +77,7 @@ object predict {
     //Write DF to a File
     val today = new SimpleDateFormat("d-M-y").format(Calendar.getInstance().getTime())
     finalDF.write.format("csv").save(outputPath+today)
-    
-    //Copy the processed files to an other folder
-    FileUtils.copyDirectory(new File(originPath), new File(outputProcessFiles + "/process" + today))
-    
+      
     
     mySpark.stop()
   }
@@ -92,19 +98,32 @@ object predict {
     }
   
   def getListOfDirs(dir: String):List[String] = {
-    val d = new File(dir)
-    if (d.exists && d.isDirectory) {
-        d.listFiles.filter(_.isDirectory).flatMap(f => getListOfFiles(f)).toList
+    val fs = FileSystem.get(new Configuration())
+    val p = new Path(dir)  
+    PrintUtiltity.print(s"Initial dir ${dir}")
+    if (fs.exists(p) && fs.isDirectory(p)) {
+        val files = fs.listFiles(p, true)
+        val filenames = ListBuffer[ String ]( )
+        while ( files.hasNext ) {
+          
+          val file = files.next()
+          PrintUtiltity.print(s"File ${file.getPath().toString()}")
+          if(file.isFile()){
+            filenames += file.getPath().toString()
+          } 
+        }
+        filenames.toList
+        
     } else {
         List[String]()
     }
   }
   
-  def getListOfFiles(d: File):List[String] = {
-    if (d.exists && d.isDirectory) {
-        d.listFiles.filter(_.isFile).map(f => f.getAbsolutePath).toList
-    } else {
-        List[String]()
+
+}
+
+object PrintUtiltity {
+    def print(data:String) = {
+      println(data)
     }
-  }
 }
